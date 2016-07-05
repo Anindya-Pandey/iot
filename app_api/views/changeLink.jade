@@ -1,0 +1,74 @@
+extends layout
+
+block content
+  h1 #{name}
+  - var device1, noTanks = 0, noMotors = 0;
+  
+  
+  each device in devices
+   if device.name == name
+    - device1 = device;
+   if device.type == 'motor'
+    - noMotors = noMotors + 1;
+   if device.type == 'tank'
+    - noTanks = noTanks + 1;
+  
+  
+  p disconnect from
+  
+  if device1.type == 'motor'
+   
+   if device1.tankLinks.length == 0
+    p Connected to none
+   
+   else 
+    
+    each tank in device1.tankLinks
+     a(href='http://localhost:3000/disconnect/#{name}/#{device1.type}/#{tank}') #{tank}
+     br
+  
+  else
+   
+   if device1.motorLinks.length == 0
+    p Connected to none
+   
+   else 
+    
+    each motor in device1.motorLinks
+     a(href='http://localhost:3000/disconnect/#{name}/#{device1.type}/#{motor}') #{motor}
+     br 
+  
+  
+  p connect to
+  
+  if device1.type == 'motor'
+   
+   if noTanks == 0
+    p Nothing to connect to
+   
+   else if device1.tankLinks.length == noTanks
+    p connected to all
+   
+   else
+    
+    each device in devices
+     
+     if device.type == 'tank' && device1.tankLinks.indexOf(device.name) <= -1
+      a(href='http://localhost:3000/connect/#{name}/#{device1.type}/#{device.name}') #{device.name}
+      br
+  
+  else if device1.type == 'tank'
+   
+   if noMotors == 0
+    p nothing to connect to
+    
+   else if device1.motorLinks.length == noMotors
+    p connected to all
+   
+   else
+    
+    each device in devices
+     
+     if device.type == 'motor' && device1.motorLinks.indexOf(device.name) <= -1
+      a(href='http://localhost:3000/connect/#{name}/#{device1.type}/#{device.name}') #{device.name}
+      br

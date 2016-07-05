@@ -1,0 +1,19 @@
+extends layout
+
+block content
+  h1 List
+  each device in devices
+   if device.type == 'motor' || device.type == 'tank'
+      p #{device.name}
+      if device.type == 'tank'
+       progress(id = 'level#{device.name}' value = '#{device.level}' max = '1000')
+       br
+      a(href='http://localhost:3000/changeLink/#{device.name}')
+       button change link
+      a(href='http://localhost:3000/switch/#{device.name}/#{device.type}')
+       if device.status == 'off'
+        button switch on
+       else
+        button switch off
+  script(src='/javascripts/socket.io.js')
+  script(src='/javascripts/view.js')
