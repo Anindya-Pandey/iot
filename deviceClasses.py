@@ -44,7 +44,7 @@ class Motor(Device):
         self.status = 'on'
       else:
         self.status = 'off'
-    print self.status
+      print self.status
     i = 0
     while (i < len(self.tankLinks)):
       sys.stdout.write(name[0]['name']+' '+self.tankLinks[i].name+'\n')
@@ -64,7 +64,7 @@ class Motor(Device):
       while (i < len(self.tankLinks)):
         if (self.tankLinks[i].name == recTank[0]['tankName']):
           break
-      i = i + 1
+        i = i + 1
     del(self.tankLinks[i])
     i = 0
     while (i < len(self.tankLinks)):
@@ -73,10 +73,10 @@ class Motor(Device):
   def cnctTank(self,*recTank):
     if (recTank[0]['name'] == self.name):
       self.tankLinks.append(TankDeviceElement(recTank[0]['tankName'],recTank[0]['status'],recTank[0]['level']))
-    i = 0
-    while (i < len(self.tankLinks)):
-      self.tankLinks[i].tankDisDevice()
-      i = i + 1
+      i = 0
+      while (i < len(self.tankLinks)):
+        self.tankLinks[i].tankDisDevice()
+        i = i + 1
 
 class Tank(Device):
   def __init__(self):
@@ -90,7 +90,7 @@ class Tank(Device):
   def rcvWater(self, *rcvWater):
     if (rcvWater[0]['name'] == self.name):
       self.level = self.level + int(rcvWater[0]['amount'])
-    sys.stdout.write('\nLevel:'+str(self.level))
+      sys.stdout.write('\nLevel:'+str(self.level))
   def switch(self,*name):
     if (name[0]['name'] == self.name):
       if (self.status == 'off'):
@@ -116,7 +116,7 @@ class Tank(Device):
       while (i < len(self.motorLinks)):
         if (self.motorLinks[i].name == recMotor[0]['motorName']):
           break
-      i = i + 1
+        i = i + 1
       del(self.motorLinks[i])
       i = 0
       while (i < len(self.motorLinks)):
@@ -129,5 +129,4 @@ class Tank(Device):
       while (i < len(self.motorLinks)):
         self.motorLinks[i].disDevice()
         i = i + 1
-   
- 
+
