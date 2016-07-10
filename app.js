@@ -9,6 +9,7 @@ var deviceClasses = require('./deviceClasses');
 var motorArray = [];
 var gsocket;
 var tankArray = [];
+var filterArray = [];
 var deviceArray = [];
 
 function inDeviceArray() {
@@ -21,6 +22,11 @@ function inDeviceArray() {
  i=0;
  while ( i < tankArray.length ) {
   deviceArray.push(JSON.stringify(tankArray[i].jsonRep));
+  i=i+1;
+ }
+ i=0;
+ while ( i < filterArray.length ) {
+  deviceArray.push(JSON.stringify(filterArray[i].jsonRep));
   i=i+1;
  }
 }
@@ -56,50 +62,80 @@ app.get('/changeLink/:deviceName', function (req, res, next) {
  res.render('changeLink',JSON.parse('{"name":"'+req.params.deviceName+'","devices":['+deviceArrayJson()+']}'));
 });
 
-app.get('/connect/:deviceName/:deviceType/:toName', function (req, res, next) {
+app.get('/connect/:fromName/:fromType/:toType/:toName', function (req, res, next) {
  var i = 0;
- var name = req.params.deviceName;
+ var fromName = req.params.fromName;
  var toName = req.params.toName;
- if ( req.params.deviceType == 'motor' ) {
-  var motor = motorArray[parseInt(name[name.length-1])];
+ var toType = req.params.toType;
+ var fromType = req.params.fromType;
+ if ( fromType == 'motor' ) {
+  var motor = motorArray[parseInt(fromName[fromName.length-1])];
   if (motor.tankLinks.indexOf(toName) <= -1) {
    var tank = tankArray[parseInt(toName[toName.length-1])];
-   io.sockets.emit('cnct',{'name': name, 'tankName': toName, 'status': tank.status, 'level': tank.level});
-   io.sockets.emit('cnct',{'name': toName, 'motorName': name, 'status': motor.status});
+   io.sockets.emit('cnct',{'fromName': fromName, 'toName': toName, 'toType': toType, 'status': tank.status, 'level': tank.level});
+   io.sockets.emit('cnct',{'fromName': toName, 'toName': fromName, 'toType': fromType, 'status': motor.status, 'level': tank.level});
    motor.tankLinks.push(toName);
    motor.changeJsonRep();
-   tank.motorLinks.push(name);
+   tank.motorLinks.push(fromName);
    tank.changeJsonRep();
   }
  }
+ else if ( fromType == 'tank' ){
+  if (toType == 'motor'){
+   var motor = motorArray[parseInt(toName[toName.length-1])];
+   var tank = tankArray[parseInt(fromName[fromName.length-1])];
+   if (tank.motorLinks.indexOf(toName) <= -1) {
+    io.sockets.emit('cnct',{'toName': toName, 'fromName': fromName, 'toType': toType, 'status': tank.status, 'level': tank.level});
+    io.sockets.emit('cnct',{'fromName': toName, 'toName': fromName, 'toType': fromType, 'status': motor.status, 'level': tank.level});
+    motor.tankLinks.push(fromName);
+    motor.changeJsonRep();
+    tank.motorLinks.push(toName);
+    tank.changeJsonRep();
+   }
+  }
+  else if (toType == 'filter'){
+   var filter = filterArray[parseInt(toName[toName.length-1])];
+   var tank = tankArray[parseInt(fromName[fromName.length-1])];
+   if (tank.filterLinks.indexOf(toName) <= -1) {
+    io.sockets.emit('cnct',{'toName': toName, 'fromName': fromName, 'toType': toType, 'status': filter.status, 'level': filter.level});
+    io.sockets.emit('cnct',{'fromName': toName, 'toName': fromName, 'toType': fromType, 'status': tank.status, 'level': tank.level});
+    filter.tankLinks.push(fromName);
+    filter.changeJsonRep();
+    tank.filterLinks.push(toName);
+    tank.changeJsonRep();
+   }
+  }   
+ }
  else {
-  var motor = motorArray[parseInt(toName[toName.length-1])];
-  var tank = tankArray[parseInt(name[name.length-1])];
-  if (tank.motorLinks.indexOf(toName) <= -1) {
-   io.sockets.emit('cnct',{'name': toName, 'tankName': name, 'status': tank.status, 'level': tank.level});
-   io.sockets.emit('cnct',{'name': name, 'motorName': toName, 'status': motor.status});
-   motor.tankLinks.push(name);
-   motor.changeJsonRep();
-   tank.motorLinks.push(toName);
+  var filter = filterArray[parseInt(fromName[fromName.length-1])];
+  var tank = tankArray[parseInt(toName[toName.length-1])];
+  if (filter.tankLinks.indexOf(toName) <= -1) {
+   io.sockets.emit('cnct',{'toName': toName, 'fromName': fromName, 'toType': toType, 'status': tank.status, 'level': tank.level});
+   io.sockets.emit('cnct',{'fromName': toName, 'toName': fromName, 'toType': fromType, 'status': filter.status, 'level': filter.level});
+   filter.tankLinks.push(toName);
+   filter.changeJsonRep();
+   tank.filterLinks.push(fromName);
    tank.changeJsonRep();
   }
  }
  inDeviceArray();
  deviceArrayJson();
  //console.log(deviceArrayJson());
- res.render('changeLink',JSON.parse('{"name":"'+req.params.deviceName+'","devices":['+deviceArrayJson()+']}'));
+ res.render('changeLink',JSON.parse('{"name":"'+fromName+'","devices":['+deviceArrayJson()+']}'));
 });
 
-app.get('/disconnect/:deviceName/:deviceType/:fromName', function (req, res, next) {
+app.get('/disconnect/:name/:type/:fromType/:fromName', function (req, res, next) {
  var i = 0;
- var name = req.params.deviceName;
+ var name = req.params.name;
+ var type = req.params.type;
+ var fromType = req.params.fromType;
  var fromName = req.params.fromName;
- if ( req.params.deviceType == 'motor' ) {
+ if ( type == 'motor' ) {
   var motor = motorArray[parseInt(name[name.length-1])];
   var index = motor.tankLinks.indexOf(fromName);
   if (index > -1) {
-   io.sockets.emit('discnct',{'name': name, 'tankName': fromName})
-   io.sockets.emit('discnct',{'name': fromName, 'motorName': name})
+   io.sockets.emit('discnct',{'name': name, 'fromName': fromName, 'fromType': fromType})
+   io.sockets.emit('discnct',{'name': fromName, 'fromName': name, 'fromType': type})
    var tank = tankArray[parseInt(fromName[fromName.length-1])];
    var index1 = tank.motorLinks.indexOf(name);
    motor.tankLinks.splice(index,1);
@@ -108,24 +144,54 @@ app.get('/disconnect/:deviceName/:deviceType/:fromName', function (req, res, nex
    tank.changeJsonRep();
   }
  }
- else {
-  var motor = motorArray[parseInt(fromName[fromName.length-1])];
-  var index = motor.tankLinks.indexOf(name);
-  var tank = tankArray[parseInt(name[name.length-1])];
-  var index1 = tank.motorLinks.indexOf(fromName);
-  if (index1 > -1) {
-   io.sockets.emit('discnct',{'name': name, 'motorName': fromName})
-   io.sockets.emit('discnct',{'name': fromName, 'tankName': name})
-   motor.tankLinks.splice(index,1);
-   motor.changeJsonRep();
-   tank.motorLinks.splice(index1,1);
-   tank.changeJsonRep();
+ else if (type == 'tank') {
+  if (fromType == 'motor') {
+   var motor = motorArray[parseInt(fromName[fromName.length-1])];
+   var index = motor.tankLinks.indexOf(name);
+   var tank = tankArray[parseInt(name[name.length-1])];
+   var index1 = tank.motorLinks.indexOf(fromName);
+   if (index1 > -1) {
+    io.sockets.emit('discnct',{'name': name, 'fromName': fromName, 'fromType': fromType})
+    io.sockets.emit('discnct',{'name': fromName, 'fromName': name, 'fromType': type})
+    motor.tankLinks.splice(index,1);
+    motor.changeJsonRep();
+    tank.motorLinks.splice(index1,1);
+    tank.changeJsonRep();
+   }
+  }
+  else if (fromType == 'filter') {
+   var filter = filterArray[parseInt(fromName[fromName.length-1])];
+   var index = filter.tankLinks.indexOf(name);
+   var tank = tankArray[parseInt(name[name.length-1])];
+   var index1 = tank.filterLinks.indexOf(fromName);
+   if (index1 > -1) {
+    io.sockets.emit('discnct',{'name': name, 'fromName': fromName, 'fromType': fromType})
+    io.sockets.emit('discnct',{'name': fromName, 'fromName': name, 'fromType': type})
+    filter.tankLinks.splice(index,1);
+    filter.changeJsonRep();
+    tank.filterLinks.splice(index1,1);
+    tank.changeJsonRep();
+   }
   }
  }
+ else {
+  var filter = filterArray[parseInt(name[name.length-1])];
+  var index = filter.tankLinks.indexOf(fromName);
+  var tank = tankArray[parseInt(fromName[fromName.length-1])];
+  var index1 = tank.filterLinks.indexOf(name);
+  if (index1 > -1) {
+   io.sockets.emit('discnct',{'name': name, 'fromName': fromName, 'fromType': fromType})
+   io.sockets.emit('discnct',{'name': fromName, 'fromName': name, 'fromType': type})
+   filter.tankLinks.splice(index,1);
+   filter.changeJsonRep();
+   tank.filterLinks.splice(index1,1);
+   tank.changeJsonRep();
+  }
+ } 
  inDeviceArray();
  deviceArrayJson();
  //console.log(deviceArrayJson());
- res.render('changeLink',JSON.parse('{"name":"'+req.params.deviceName+'","devices":['+deviceArrayJson()+']}'));
+ res.render('changeLink',JSON.parse('{"name":"'+name+'","devices":['+deviceArrayJson()+']}'));
 });
 
 app.get('/switch/:deviceName/:deviceType', function (req, res, next) {
@@ -142,7 +208,7 @@ app.get('/switch/:deviceName/:deviceType', function (req, res, next) {
   }
   motor.changeJsonRep();
  }
- else {
+ else if (type == 'tank') {
   var tank = tankArray[parseInt(name[name.length-1])];
   if (tank.status == 'on') {
    tank.status = 'off';
@@ -152,6 +218,17 @@ app.get('/switch/:deviceName/:deviceType', function (req, res, next) {
   }
   tank.changeJsonRep();
  }
+ else {
+  var filter = filterArray[parseInt(name[name.length-1])];
+  if (filter.status == 'on') {
+   filter.status = 'off';
+  }
+  else {
+   filter.status = 'on';
+  }
+  filter.changeJsonRep();
+ }
+        
  inDeviceArray();
  res.redirect('http://localhost:3000/view');
 });
@@ -178,6 +255,24 @@ io.on('connection', function (socket) {
    inDeviceArray();
   }
  });
+ socket.on('sndWaterFilter', function(sndWaterFilter) {
+  var name = sndWaterFilter.name;
+  var fromName = sndWaterFilter.fromName;
+  var tank = tankArray[parseInt(fromName[fromName.length-1])];
+  var filter = filterArray[parseInt(name[name.length-1])];
+  if (filter.level < 100 && tank.level > 0) {
+   io.sockets.emit('rcvWater', {'amount': sndWaterFilter.amount.toString(), 'name': sndWaterFilter.name.toString()});
+   io.sockets.emit('drawWater', {'amount': sndWaterFilter.amount.toString(), 'fromName': sndWaterFilter.fromName.toString()});
+   tank.level = parseInt(tank.level) - parseInt(sndWaterFilter.amount);
+   filter.level = parseInt(filter.level) + parseInt(sndWaterFilter.amount);
+   console.log(sndWaterFilter.amount);
+   console.log(tank.level);
+   console.log(filter.level);
+   tank.changeJsonRep();
+   filter.changeJsonRep();
+   inDeviceArray();
+  }
+ }); 
  socket.on('sendName', function(sendName) {
   //console.log('Received:'+JSON.stringify(sendName));
   if(sendName.sendName == "motor") {
@@ -196,6 +291,15 @@ io.on('connection', function (socket) {
    //console.log(deviceArray);
    //console.log(deviceArrayJson());
   }
+  if(sendName.sendName == "filter") {
+   socket.emit('recName',{'name': 'filter'+filterArray.length.toString()});
+   var filter = new deviceClasses.Filter('filter'+filterArray.length.toString())
+   filterArray[filterArray.length] = filter;
+   deviceArray[deviceArray.length] = JSON.stringify(filter.jsonRep);
+   //console.log(deviceArray);
+   //console.log(deviceArrayJson());
+  }
+  
  });
 });
 

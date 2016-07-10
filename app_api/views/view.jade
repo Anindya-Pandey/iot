@@ -3,11 +3,14 @@ extends layout
 block content
   h1 List
   each device in devices
-   if device.type == 'motor' || device.type == 'tank'
+   if device.type == 'motor' || device.type == 'tank' || device.type == 'filter'
       p #{device.name}
       if device.type == 'tank'
        progress(id = 'level#{device.name}' value = '#{device.level}' max = '1000')
        br
+      else if device.type == 'filter'
+       progress(id = 'level#{device.name}' value = '#{device.level}' max = '100')
+       br       
       a(href='http://localhost:3000/changeLink/#{device.name}')
        button change link
       a(href='http://localhost:3000/switch/#{device.name}/#{device.type}')

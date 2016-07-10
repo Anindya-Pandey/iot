@@ -14,8 +14,6 @@ while True:
     while (i < len(m.tankLinks)):
       if (m.tankLinks[i].status == 'on' and (int(m.tankLinks[i].level) < 1000)):
         m.socketIO.emit('sndWater', {'amount': str(10/count), 'name': str(m.tankLinks[i].name)})
-        m.tankLinks[i].level = m.tankLinks[i].level + int(10/count)
-        m.tankLinks[i].tankDisDevice()
       i = i + 1
   m.socketIO.wait(seconds=1)
 m.socketIO.wait()
