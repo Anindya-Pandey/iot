@@ -196,7 +196,7 @@ class Tank(Device):
           i=i+1
         del(self.filterLinks[i])
         i=0
-        while i<len(filterLinks):
+        while i<len(self.filterLinks):
           self.filterLinks[i].filterDisDevice()
           i=i+1
           
